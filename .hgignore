@@ -1,0 +1,10 @@
+syntax: glob
+*.obj
+*.exe
+*.pdb
+*.user
+*.suo
+[Bb]in
+[Dd]ebug*/
+obj/
+[Rr]elease*/
