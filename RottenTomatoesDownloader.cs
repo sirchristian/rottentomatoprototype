@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
+using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
+using System.Runtime.Serialization.Json;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Data.Common;
-using System.Data.SQLite;
-using System.Reflection;
 
 namespace APIHelper
 {
@@ -84,9 +85,14 @@ namespace APIHelper
         /// <summary>
         /// Populdates a DB with the downloaded data
         /// </summary>
-        internal static void PopuldateDB()
+        internal static void PopuldateDB(string filePath = "movies.db.json", string dbName = "Movies.db")
         {
-            throw new NotImplementedException();
+            DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(MovieInfo));
+            using (FileStream fs = new FileStream(filePath, FileMode.Open))
+            {
+                MovieInfo movieInfo = (MovieInfo)serializer.ReadObject(fs);
+                Console.WriteLine(movieInfo.movie_list.movies[0].title);
+            }
         }
 
         /// <summary>
@@ -108,6 +114,11 @@ namespace APIHelper
             }
         }
 
+        /// <summary>
+        /// Helper to get resource files
+        /// </summary>
+        /// <param name="resourceFile"></param>
+        /// <returns></returns>
         private static string GetTextFromResourceFile(string resourceFile)
         {
             Assembly currentAsm = Assembly.GetExecutingAssembly();

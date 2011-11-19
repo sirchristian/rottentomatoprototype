@@ -17,13 +17,31 @@ CREATE TABLE People
 
 CREATE TABLE Roles
 (
-	MovieId,
-	PersonId,
-	RoleTitle
+	MovieId INTEGER NOT NULL,
+	PersonId INTEGER NOT NULL,
+	RoleTitle VARCHAR(1024)
 );
 
 CREATE UNIQUE INDEX Roles_PrimaryKey ON Roles 
 ( 
 	MovieId, 
 	PersonId
+);
+
+CREATE TABLE Genres
+(
+	GenreId INTEGER PRIMARY KEY,
+	Name VARCHAR(1024) NOT NULL
+);
+
+CREATE TABLE MovieGenres
+(
+	MovieId INTEGER NOT NULL,
+	GenreId INTEGER NOT NULL
+);
+
+CREATE UNIQUE INDEX MovieGenres_PrimaryKey ON MovieGenres 
+( 
+	MovieId, 
+	GenreId
 );
