@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.Serialization.Json;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Data;
 
 namespace APIHelper
 {
@@ -82,18 +83,37 @@ namespace APIHelper
             }
         }
 
-        /// <summary>
+        /// <summary>ImageUrl
         /// Populdates a DB with the downloaded data
         /// </summary>
         internal static void PopuldateDB(string filePath = "movies.db.json", string dbName = "Movies.db")
         {
             DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(MovieInfo));
-            using (FileStream fs = new FileStream(filePath, FileMode.Open))
+            using (DbConnection conn = new SQLiteConnection("Data Source=" + dbName + ";Version=3;"))
             {
-                MovieInfo movieInfo = (MovieInfo)serializer.ReadObject(fs);
-                Console.WriteLine(movieInfo.movie_list.movies[0].title);
+                conn.Open();
+                using (FileStream fs = new FileStream(filePath, FileMode.Open))
+                {
+                    MovieInfo movieInfo = (MovieInfo)serializer.ReadObject(fs);
+                    foreach (Movie movie in movieInfo.movie_details)
+                    {
+                        // Insert the movie. This is probably prone to sql injection. Do don't use this in a production app  
+                        DbCommand movieInsert = new SQLiteCommand(String.Format(
+                            @"INSERT INTO Movies (Name, TomatoCriticsScore, ImageUrl, MPAARating, RottenTomatoesId, ImdbId)
+                              VALUES ('{0}', {1}, '{2}', '{3}', {4}, {5})",
+                        movie.title,
+                        movie.ratings.critics_score,
+                        movie.posters.detailed,
+                        movie.mpaa_rating,
+                        movie.id,
+                        movie.alternate_ids.imdb));
+                        movieInsert.Connection = conn;
+                        movieInsert.ExecuteNonQuery();
+                    }
+                }
             }
         }
+
 
         /// <summary>
         /// Creates a new DB for our movies

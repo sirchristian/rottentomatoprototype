@@ -4,7 +4,7 @@
 	Name VARCHAR(128) NOT NULL, 
 	TomatoCriticsScore INTEGER,
 	ImageUrl VARCHAR(128),
-	MPAARating VARCHAR(4),
+	MPAARating VARCHAR(8),
 	RottenTomatoesId INTEGER,
 	ImdbId INTEGER
 );

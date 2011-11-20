@@ -22,7 +22,7 @@ namespace APIHelper
 
             if (args[0] == "createdb")
             {
-                RottenTomatoesDownloader.CreateDB();
+                RottenTomatoesDownloader.CreateDB(deleteExisting: true);
             }
 
             if (args[0] == "populdatedb")
