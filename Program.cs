@@ -24,11 +24,6 @@ namespace APIHelper
             {
                 RottenTomatoesDownloader.CreateDB(deleteExisting: true);
             }
-
-            if (args[0] == "populdatedb")
-            {
-                RottenTomatoesDownloader.PopuldateDB();
-            }
         }
     }
 }

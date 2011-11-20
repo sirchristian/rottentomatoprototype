@@ -86,12 +86,14 @@ namespace APIHelper
         /// <summary>ImageUrl
         /// Populdates a DB with the downloaded data
         /// </summary>
-        internal static void PopuldateDB(string filePath = "movies.db.json", string dbName = "Movies.db")
+        private static void PopuldateDB(string filePath = "movies.db.json", string dbName = "Movies.db")
         {
             DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(MovieInfo));
             using (DbConnection conn = new SQLiteConnection("Data Source=" + dbName + ";Version=3;"))
             {
                 conn.Open();
+                List<string> people = new List<string>();
+                List<string> genres = new List<string>();
                 using (FileStream fs = new FileStream(filePath, FileMode.Open))
                 {
                     MovieInfo movieInfo = (MovieInfo)serializer.ReadObject(fs);
@@ -109,6 +111,71 @@ namespace APIHelper
                         movie.alternate_ids.imdb));
                         movieInsert.Connection = conn;
                         movieInsert.ExecuteNonQuery();
+                        long movieId = ((SQLiteConnection)conn).LastInsertRowId;
+
+                        // Add any genres
+                        foreach (string genre in movie.genres)
+                        {
+                            // Add the genre to the DB if it doesn't exist
+                            long genreId = -1;
+                            if (!genres.Contains(genre))
+                            {
+                                DbCommand genreInsert = new SQLiteCommand(String.Format(
+                                    @"INSERT INTO Genres (Name) VALUES ('{0}')", genre));
+                                genreInsert.Connection = conn;
+                                genreInsert.ExecuteNonQuery();
+                                genreId = ((SQLiteConnection)conn).LastInsertRowId;
+                            }
+                            else
+                            {
+                                DbCommand genreSelect = new SQLiteCommand(String.Format(
+                                    @"SELECT GenreId FROM Genres WHERE Name = '{0}'", genre));
+                                genreSelect.Connection = conn;
+                                genreId = (long)genreSelect.ExecuteScalar();
+                            }
+
+                            // Populate the movie/genre table
+                            DbCommand movieGenresInsert = new SQLiteCommand(String.Format(
+                                    @"INSERT INTO MovieGenres (MovieId, GenreId) VALUES ({0}, {1})", movieId, genreId));
+                            movieGenresInsert.Connection = conn;
+                            movieGenresInsert.ExecuteNonQuery();
+                        }
+
+                        
+                        // Combine directors and actors into one list
+                        Dictionary<string, string> roles = new Dictionary<string,string>();
+                        foreach (Cast cast in movie.abridged_cast)
+                            roles.Add(cast.name, cast.characters.First());
+                        foreach (Director director in movie.abridged_directors)
+                            roles.Add(director.name, "Director");
+
+                        // Add the people/roles
+                        foreach (string person in roles.Keys)
+                        {
+                            // Add the genre to the DB if it doesn't exist
+                            long personId = -1;
+                            if (!people.Contains(person))
+                            {
+                                DbCommand personInsert = new SQLiteCommand(String.Format(
+                                    @"INSERT INTO People (Name) VALUES ('{0}')", person));
+                                personInsert.Connection = conn;
+                                personInsert.ExecuteNonQuery();
+                                personId = ((SQLiteConnection)conn).LastInsertRowId;
+                            }
+                            else
+                            {
+                                DbCommand personSelect = new SQLiteCommand(String.Format(
+                                    @"SELECT PersonId FROM People WHERE Name = '{0}'", person));
+                                personSelect.Connection = conn;
+                                personId = (long)personSelect.ExecuteScalar();
+                            }
+
+                            // Populate the roles table
+                            DbCommand roleInsert = new SQLiteCommand(String.Format(
+                                    @"INSERT INTO Roles (MovieId, PersonId, RoleTitle) VALUES ({0}, {1}, '{2}')", movieId, personId, roles[person]));
+                            roleInsert.Connection = conn;
+                            roleInsert.ExecuteNonQuery();
+                        }
                     }
                 }
             }
@@ -132,6 +199,8 @@ namespace APIHelper
                 createSQL.CommandText = GetTextFromResourceFile("CreateDB.sql");
                 createSQL.ExecuteNonQuery();
             }
+
+            PopuldateDB();
         }
 
         /// <summary>
